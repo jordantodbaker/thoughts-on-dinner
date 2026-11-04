@@ -45,3 +45,36 @@ export function hasEnded(item: { endTime: string | null; startTime: string | nul
 export function isDaySpecific(deal: { days: readonly unknown[]; validFrom: string | null; validTo: string | null }): boolean {
   return deal.days.length > 0 || deal.validFrom !== null || deal.validTo !== null;
 }
+
+/**
+ * How "special" a deal is for the day being shown. Lower sorts first.
+ *
+ *   0  runs one or two days a week, or has a dated window — Taco Tuesday,
+ *      Wednesday steak night, a weekly-ad item: the reason to go out tonight
+ *   1  three or four days — Thu–Sat prime rib, a Tue–Thu oyster hour
+ *   2  every day or every weekday — the standing happy hour
+ *
+ * Within a tier, anything titled as a happy hour or late-night menu sorts
+ * after a named special, so "Taco Tuesday" beats "All-Day Sunday Happy Hour".
+ */
+export function dealTier(deal: { days: readonly unknown[]; validFrom: string | null; validTo: string | null }): 0 | 1 | 2 {
+  if (deal.validFrom !== null || deal.validTo !== null) return 0;
+  const n = deal.days.length;
+  if (n === 0 || n >= 5) return 2;
+  return n <= 2 ? 0 : 1;
+}
+
+const ROUTINE_TITLE = /happy hour|late[- ]night|lunch combo|digital|loyalty|rewards|coupons|for u\b/i;
+
+export function isRoutineTitle(title: string): boolean {
+  return ROUTINE_TITLE.test(title);
+}
+
+/** Sort: most special first, named specials before happy hours, then by start time. */
+export function bySpecialness<T extends { title: string; days: readonly unknown[]; validFrom: string | null; validTo: string | null; startTime: string | null }>(a: T, b: T): number {
+  return (
+    dealTier(a) - dealTier(b) ||
+    Number(isRoutineTitle(a.title)) - Number(isRoutineTitle(b.title)) ||
+    byStartTime(a, b)
+  );
+}

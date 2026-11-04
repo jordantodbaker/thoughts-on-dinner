@@ -123,3 +123,24 @@ describe("pairing", () => {
     expect(pickPairing([], 3)).toBeNull();
   });
 });
+
+describe("specialness ordering", () => {
+  it("puts one-day specials first, happy hours last, named specials before happy hours", async () => {
+    const { bySpecialness, dealTier } = await import("./schedule");
+    const taco = deal({ title: "Taco Tuesday", days: ["TUE"], startTime: null, endTime: null });
+    const sundayHH = deal({ title: "All-Day Sunday Happy Hour", days: ["SUN"], startTime: null, endTime: null });
+    const primeRib = deal({ title: "Prime Rib Nights", days: ["THU", "FRI", "SAT"] });
+    const weekdayHH = deal({ title: "Weekday Happy Hour", days: ["MON", "TUE", "WED", "THU", "FRI"] });
+    const dailyHH = deal({ title: "Daily Happy Hour", days: [] });
+    const adItem = deal({ title: "Fresh Deals", days: [], validFrom: "2026-11-04", validTo: "2026-11-10" });
+    expect(dealTier(taco)).toBe(0);
+    expect(dealTier(adItem)).toBe(0);
+    expect(dealTier(primeRib)).toBe(1);
+    expect(dealTier(weekdayHH)).toBe(2);
+    expect(dealTier(dailyHH)).toBe(2);
+    const sorted = [dailyHH, weekdayHH, sundayHH, primeRib, adItem, taco].sort(bySpecialness).map((d) => d.title);
+    expect(sorted.slice(0, 3)).toEqual(["Fresh Deals", "Taco Tuesday", "All-Day Sunday Happy Hour"]);
+    expect(sorted[3]).toBe("Prime Rib Nights");
+    expect(sorted.slice(4)).toEqual(expect.arrayContaining(["Weekday Happy Hour", "Daily Happy Hour"]));
+  });
+});

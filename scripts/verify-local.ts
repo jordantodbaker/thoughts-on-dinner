@@ -67,6 +67,14 @@ for (const date of weekDates(today)) {
   if (pairings.length === 0) problems.push(`${date}: no pairings`);
 }
 
+const todayBoard = buildDayBoard(today, dealItems, eventItems);
+console.log("\n[verify] restaurant order today (specials first):");
+const show = (d: (typeof todayBoard.restaurantDeals)[number]) =>
+  console.log(`  ${d.title.padEnd(36)} ${d.venue.name.padEnd(32)} days=${d.days.length || "daily"}`);
+todayBoard.restaurantDeals.slice(0, 10).forEach(show);
+console.log("  ...");
+todayBoard.restaurantDeals.slice(-3).forEach(show);
+
 // Spot-check: a dated event must only appear on its date.
 const dated = eventItems.find((e) => !e.recurring && e.date);
 if (dated) {

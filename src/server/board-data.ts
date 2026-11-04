@@ -7,7 +7,7 @@
  */
 import type { PrismaClient } from "~/generated/prisma/client";
 import { formatIso, type IsoDate } from "~/lib/dates";
-import { byStartTime, dealAppliesOn, eventAppliesOn } from "~/lib/schedule";
+import { byStartTime, bySpecialness, dealAppliesOn, eventAppliesOn } from "~/lib/schedule";
 import type { DayBoard, DealItem, EventItem, VenueSummary } from "~/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -109,7 +109,8 @@ export function buildDayBoard(
   dealItems: DealItem[],
   eventItems: EventItem[],
 ): DayBoard {
-  const deals = dealItems.filter((d) => dealAppliesOn(d, date)).sort(byStartTime);
+  // Specials that make tonight different lead; the standing happy hours follow.
+  const deals = dealItems.filter((d) => dealAppliesOn(d, date)).sort(bySpecialness);
   return {
     date,
     restaurantDeals: deals.filter((d) => d.venue.type === "RESTAURANT"),
