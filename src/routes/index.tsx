@@ -11,7 +11,9 @@ import { Button } from "~/components/ui/button";
 import { ACTIVITY_CATEGORIES, isActivityCategory } from "~/lib/categories";
 import { formatLong, nowHHMM } from "~/lib/dates";
 import { buildPairings, pickPairing } from "~/lib/pairing";
-import { hasEnded, isDaySpecific } from "~/lib/schedule";
+import { endsBeforeWorkEnd, hasEnded, isDaySpecific } from "~/lib/schedule";
+import { useShowEarly } from "~/lib/use-show-early";
+import { EarlyToggle } from "~/components/EarlyToggle";
 import { weekBoardQueryOptions } from "~/server/board";
 
 const searchSchema = z.object({
@@ -48,24 +50,31 @@ function TonightPage() {
     () => today.restaurantDeals.filter((d) => showPast || !now || !hasEnded(d, now)),
     [today.restaurantDeals, now, showPast],
   );
+  // Weekday events that end by 5 PM are hidden unless asked for.
+  const [showEarly, setShowEarly] = useShowEarly();
+  const afterWork = useMemo(
+    () => today.events.filter((e) => showEarly || !endsBeforeWorkEnd(e, today.date)),
+    [today.events, today.date, showEarly],
+  );
+  const earlyHidden = today.events.length - afterWork.length;
   const liveEvents = useMemo(
     () =>
-      today.events.filter(
+      afterWork.filter(
         (e) => (showPast || !now || !hasEnded(e, now)) && (!category || e.category === category),
       ),
-    [today.events, now, showPast, category],
+    [afterWork, now, showPast, category],
   );
   // Chips only for types that are on tonight (ignoring the active filter).
   const availableCategories = useMemo(() => {
     const present = new Set(
-      today.events.filter((e) => showPast || !now || !hasEnded(e, now)).map((e) => e.category),
+      afterWork.filter((e) => showPast || !now || !hasEnded(e, now)).map((e) => e.category),
     );
     return ACTIVITY_CATEGORIES.filter((c) => present.has(c));
-  }, [today.events, now, showPast]);
+  }, [afterWork, now, showPast]);
   const hiddenCount =
     today.restaurantDeals.length -
     liveDeals.length +
-    (today.events.filter((e) => !category || e.category === category).length - liveEvents.length);
+    (afterWork.filter((e) => !category || e.category === category).length - liveEvents.length);
 
   const groceryToday = useMemo(() => today.groceryDeals.filter(isDaySpecific), [today.groceryDeals]);
 
@@ -137,7 +146,12 @@ function TonightPage() {
           categories={availableCategories}
           selected={category}
           onSelect={setCategory}
-        />
+        >
+          <EarlyToggle on={showEarly} hidden={earlyHidden} onChange={setShowEarly} className="sm:ml-auto" />
+        </CategoryChips>
+        {availableCategories.length === 0 ? (
+          <EarlyToggle on={showEarly} hidden={earlyHidden} onChange={setShowEarly} className="mb-3" />
+        ) : null}
         {liveEvents.length ? (
           <CollapsibleList items={liveEvents.length} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {liveEvents.map((e) => (

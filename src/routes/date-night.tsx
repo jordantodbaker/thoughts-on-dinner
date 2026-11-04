@@ -11,6 +11,9 @@ import { Button } from "~/components/ui/button";
 import { ACTIVITY_CATEGORIES, isActivityCategory } from "~/lib/categories";
 import { formatLong, type IsoDate } from "~/lib/dates";
 import { buildPairings } from "~/lib/pairing";
+import { endsBeforeWorkEnd } from "~/lib/schedule";
+import { useShowEarly } from "~/lib/use-show-early";
+import { EarlyToggle } from "~/components/EarlyToggle";
 import { weekBoardQueryOptions } from "~/server/board";
 
 const searchSchema = z.object({
@@ -33,15 +36,32 @@ function DateNightPage() {
   const day = board.days.find((d) => d.date === selected) ?? board.days[0];
   const category = isActivityCategory(search.type) ? search.type : null;
 
+  // Weekday events that end by 5 PM are hidden unless asked for.
+  const [showEarly, setShowEarly] = useShowEarly();
+  const afterWork = useMemo(
+    () => day.events.filter((e) => showEarly || !endsBeforeWorkEnd(e, day.date)),
+    [day.events, day.date, showEarly],
+  );
+  const earlyHidden = day.events.length - afterWork.length;
+
   const counts = useMemo(
     () =>
       Object.fromEntries(
-        board.days.map((d) => [d.date, { food: d.restaurantDeals.length, fun: d.events.length }]),
+        board.days.map((d) => [
+          d.date,
+          {
+            food: d.restaurantDeals.length,
+            fun: d.events.filter((e) => showEarly || !endsBeforeWorkEnd(e, d.date)).length,
+          },
+        ]),
       ) as Record<IsoDate, { food: number; fun: number }>,
-    [board.days],
+    [board.days, showEarly],
   );
 
-  const events = category ? day.events.filter((e) => e.category === category) : day.events;
+  const events = useMemo(
+    () => (category ? afterWork.filter((e) => e.category === category) : afterWork),
+    [afterWork, category],
+  );
   const pairings = useMemo(
     () => buildPairings(day.restaurantDeals, events, { limit: 30, perVenue: 3 }),
     [day.restaurantDeals, events],
@@ -51,9 +71,9 @@ function DateNightPage() {
   const featured = surprise === null ? null : pairings[surprise % pairings.length];
 
   const availableCategories = useMemo(() => {
-    const set = new Set(day.events.map((e) => e.category));
+    const set = new Set(afterWork.map((e) => e.category));
     return ACTIVITY_CATEGORIES.filter((c) => set.has(c));
-  }, [day.events]);
+  }, [afterWork]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -78,10 +98,11 @@ function DateNightPage() {
         selected={category}
         onSelect={(c) => navigate({ search: { day: search.day, type: c ?? undefined }, replace: true })}
       >
+        <EarlyToggle on={showEarly} hidden={earlyHidden} onChange={setShowEarly} className="sm:ml-auto" />
         <Button
           variant="accent"
           size="sm"
-          className="ml-auto shrink-0"
+          className="shrink-0"
           disabled={pairings.length === 0}
           onClick={() => setSurprise((s) => (s === null ? 0 : s + 1))}
         >

@@ -1,5 +1,5 @@
 import type { IsoDate } from "./dates";
-import { weekdayOf } from "./dates";
+import { toMinutes, weekdayOf } from "./dates";
 import type { DealItem, EventItem } from "./types";
 
 /**
@@ -77,4 +77,25 @@ export function bySpecialness<T extends { title: string; days: readonly unknown[
     Number(isRoutineTitle(a.title)) - Number(isRoutineTitle(b.title)) ||
     byStartTime(a, b)
   );
+}
+
+const WORKDAY_END = 17 * 60; // 5 PM
+
+/**
+ * True when the item is over by 5 PM on a Monday–Friday — a lunchtime
+ * skate session or a 4 PM jazz hour that someone working until 4:30 can't
+ * make. Weekends are never "early". Untimed items and windows that run past
+ * midnight are kept.
+ */
+export function endsBeforeWorkEnd(
+  item: { startTime: string | null; endTime: string | null },
+  date: IsoDate,
+): boolean {
+  const end = toMinutes(item.endTime);
+  if (end === null) return false;
+  const start = toMinutes(item.startTime);
+  if (start !== null && end < start) return false; // crosses midnight
+  const day = weekdayOf(date);
+  if (day === "SAT" || day === "SUN") return false;
+  return end <= WORKDAY_END;
 }

@@ -144,3 +144,18 @@ describe("specialness ordering", () => {
     expect(sorted.slice(4)).toEqual(expect.arrayContaining(["Weekday Happy Hour", "Daily Happy Hour"]));
   });
 });
+
+describe("endsBeforeWorkEnd", () => {
+  it("hides weekday items that end by 5 PM and keeps everything else", async () => {
+    const { endsBeforeWorkEnd } = await import("./schedule");
+    const wed = "2026-11-04";
+    const sat = "2026-11-07";
+    expect(endsBeforeWorkEnd({ startTime: "11:00", endTime: "13:00" }, wed)).toBe(true);
+    expect(endsBeforeWorkEnd({ startTime: "16:00", endTime: "17:00" }, wed)).toBe(true);
+    expect(endsBeforeWorkEnd({ startTime: "16:00", endTime: "18:00" }, wed)).toBe(false);
+    expect(endsBeforeWorkEnd({ startTime: "19:00", endTime: null }, wed)).toBe(false);
+    expect(endsBeforeWorkEnd({ startTime: null, endTime: null }, wed)).toBe(false);
+    expect(endsBeforeWorkEnd({ startTime: "21:00", endTime: "02:00" }, wed)).toBe(false);
+    expect(endsBeforeWorkEnd({ startTime: "11:00", endTime: "13:00" }, sat)).toBe(false);
+  });
+});

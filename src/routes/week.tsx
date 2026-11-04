@@ -8,7 +8,9 @@ import { CollapsibleList } from "~/components/CollapsibleList";
 import { Button } from "~/components/ui/button";
 import { ACTIVITY_CATEGORIES, CATEGORY_META } from "~/lib/categories";
 import { addDays, formatLong, formatMonthDay, isIsoDate, WEEKDAY_SHORT, weekdayOf, type IsoDate } from "~/lib/dates";
-import { isDaySpecific } from "~/lib/schedule";
+import { endsBeforeWorkEnd, isDaySpecific } from "~/lib/schedule";
+import { useShowEarly } from "~/lib/use-show-early";
+import { EarlyToggle } from "~/components/EarlyToggle";
 import type { DayBoard } from "~/lib/types";
 import { cn } from "~/lib/utils";
 import { weekBoardQueryOptions } from "~/server/board";
@@ -44,18 +46,23 @@ function WeekPage() {
   const [lanes, setLanes] = useState<Record<Lane, boolean>>({ food: true, fun: true, grocery: false });
   const [category, setCategory] = useState<string | null>(null);
 
+  // Weekday events that end by 5 PM are hidden unless asked for.
+  const [showEarly, setShowEarly] = useShowEarly();
+  const afterWork = (d: DayBoard) =>
+    d.events.filter((e) => showEarly || !endsBeforeWorkEnd(e, d.date));
+  const filteredEvents = (d: DayBoard) =>
+    category ? afterWork(d).filter((e) => e.category === category) : afterWork(d);
+
   const counts = useMemo(
     () =>
       Object.fromEntries(
-        board.days.map((d) => [d.date, { food: d.restaurantDeals.length, fun: d.events.length }]),
+        board.days.map((d) => [d.date, { food: d.restaurantDeals.length, fun: afterWork(d).length }]),
       ) as Record<IsoDate, { food: number; fun: number }>,
-    [board.days],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [board.days, showEarly],
   );
 
   const toggleLane = (l: Lane) => setLanes((s) => ({ ...s, [l]: !s[l] }));
-
-  const filteredEvents = (d: DayBoard) =>
-    category ? d.events.filter((e) => e.category === category) : d.events;
 
   return (
     <div className="flex flex-col gap-6">
@@ -135,6 +142,11 @@ function WeekPage() {
             </option>
           ))}
         </select>
+        <EarlyToggle
+          on={showEarly}
+          hidden={day.events.length - afterWork(day).length}
+          onChange={setShowEarly}
+        />
       </div>
 
       {/* Selected day, in full. */}
