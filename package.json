@@ -16,7 +16,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "scout": "tsx scripts/scout.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "slides:optimize": "node scripts/optimize-slides.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
@@ -52,6 +53,7 @@
     "@vitejs/plugin-react": "^6.2.1",
     "pglite-prisma-adapter": "^0.7.2",
     "prisma": "^7.10.1",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.4",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",

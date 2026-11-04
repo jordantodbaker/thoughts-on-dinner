@@ -22,3 +22,6 @@ coverage/
 
 # PGlite dev database (DATABASE_URL=pglite://./.pglite)
 /.pglite/
+
+# Original camera JPEGs (3 MB each) stay local; the optimized copies in public/slides/web are committed.
+/public/slides/*.jpg

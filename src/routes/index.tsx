@@ -3,6 +3,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { DealCard, EmptyState, EventCard, SectionHeading } from "~/components/cards";
 import { PairingCard } from "~/components/PairingCard";
+import { Slideshow } from "~/components/Slideshow";
 import { Button } from "~/components/ui/button";
 import { formatLong, nowHHMM } from "~/lib/dates";
 import { buildPairings, pickPairing } from "~/lib/pairing";
@@ -47,27 +48,36 @@ function TonightPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <p className="text-sm text-muted-foreground">{formatLong(today.date)} · Bellingham, WA</p>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          What's good tonight?
-        </h1>
+      <div className="flex items-start justify-between gap-4">
+        <div className="pt-1">
+          <p className="text-sm text-muted-foreground">{formatLong(today.date)} · Bellingham, WA</p>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            What's good tonight?
+          </h1>
+        </div>
+        {/* On phones the photos sit beside the heading; wider screens get them next to the plan. */}
+        <Slideshow className="w-28 shrink-0 sm:hidden" />
       </div>
 
-      {pairing ? (
-        <PairingCard
-          pairing={pairing}
-          total={pairings.length}
-          onShuffle={() => setSeed((s) => s + 1)}
-        />
-      ) : (
-        <EmptyState>
-          No dinner-plus-activity pairing left for tonight.{" "}
-          <Link to="/date-night" className="underline">
-            Plan another night →
-          </Link>
-        </EmptyState>
-      )}
+      <div className="flex items-stretch gap-4">
+        <div className="min-w-0 flex-1">
+          {pairing ? (
+            <PairingCard
+              pairing={pairing}
+              total={pairings.length}
+              onShuffle={() => setSeed((s) => s + 1)}
+            />
+          ) : (
+            <EmptyState>
+              No dinner-plus-activity pairing left for tonight.{" "}
+              <Link to="/date-night" className="underline">
+                Plan another night →
+              </Link>
+            </EmptyState>
+          )}
+        </div>
+        <Slideshow className="hidden w-44 shrink-0 sm:block sm:aspect-auto lg:w-56" />
+      </div>
 
       {hiddenCount > 0 || showPast ? (
         <div className="-mt-4 flex items-center gap-2 text-xs text-muted-foreground">
