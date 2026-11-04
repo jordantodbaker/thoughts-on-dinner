@@ -11,7 +11,7 @@ import { Button } from "~/components/ui/button";
 import { ACTIVITY_CATEGORIES, isActivityCategory } from "~/lib/categories";
 import { formatLong, nowHHMM } from "~/lib/dates";
 import { buildPairings, pickPairing } from "~/lib/pairing";
-import { endsBeforeWorkEnd, hasEnded, isDaySpecific } from "~/lib/schedule";
+import { afterWorkFirst, countEarly, hasEnded, isDaySpecific } from "~/lib/schedule";
 import { useShowEarly } from "~/lib/use-show-early";
 import { EarlyToggle } from "~/components/EarlyToggle";
 import { weekBoardQueryOptions } from "~/server/board";
@@ -46,17 +46,25 @@ function TonightPage() {
   }, []);
   const [showPast, setShowPast] = useState(false);
 
-  const liveDeals = useMemo(
-    () => today.restaurantDeals.filter((d) => showPast || !now || !hasEnded(d, now)),
-    [today.restaurantDeals, now, showPast],
-  );
-  // Weekday events that end by 5 PM are hidden unless asked for.
+  // Weekday specials and events that end by 5 PM are hidden unless asked
+  // for; when shown they sort to the bottom.
   const [showEarly, setShowEarly] = useShowEarly();
+  const dealsAfterWork = useMemo(
+    () => afterWorkFirst(today.restaurantDeals, today.date, showEarly),
+    [today.restaurantDeals, today.date, showEarly],
+  );
   const afterWork = useMemo(
-    () => today.events.filter((e) => showEarly || !endsBeforeWorkEnd(e, today.date)),
+    () => afterWorkFirst(today.events, today.date, showEarly),
     [today.events, today.date, showEarly],
   );
-  const earlyHidden = today.events.length - afterWork.length;
+  const earlyHidden = showEarly
+    ? 0
+    : countEarly(today.restaurantDeals, today.date) + countEarly(today.events, today.date);
+
+  const liveDeals = useMemo(
+    () => dealsAfterWork.filter((d) => showPast || !now || !hasEnded(d, now)),
+    [dealsAfterWork, now, showPast],
+  );
   const liveEvents = useMemo(
     () =>
       afterWork.filter(
@@ -72,7 +80,7 @@ function TonightPage() {
     return ACTIVITY_CATEGORIES.filter((c) => present.has(c));
   }, [afterWork, now, showPast]);
   const hiddenCount =
-    today.restaurantDeals.length -
+    dealsAfterWork.length -
     liveDeals.length +
     (afterWork.filter((e) => !category || e.category === category).length - liveEvents.length);
 
@@ -127,7 +135,9 @@ function TonightPage() {
       ) : null}
 
       <section>
-        <SectionHeading title="Restaurant specials" count={liveDeals.length} hint="Happy hours and day-of-week deals on today." />
+        <SectionHeading title="Restaurant specials" count={liveDeals.length} hint="Happy hours and day-of-week deals on today.">
+          <EarlyToggle on={showEarly} hidden={earlyHidden} onChange={setShowEarly} />
+        </SectionHeading>
         {liveDeals.length ? (
           <CollapsibleList items={liveDeals.length} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {liveDeals.map((d) => (

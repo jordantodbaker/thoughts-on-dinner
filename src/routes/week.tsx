@@ -8,7 +8,7 @@ import { CollapsibleList } from "~/components/CollapsibleList";
 import { Button } from "~/components/ui/button";
 import { ACTIVITY_CATEGORIES, CATEGORY_META } from "~/lib/categories";
 import { addDays, formatLong, formatMonthDay, isIsoDate, WEEKDAY_SHORT, weekdayOf, type IsoDate } from "~/lib/dates";
-import { endsBeforeWorkEnd, isDaySpecific } from "~/lib/schedule";
+import { afterWorkFirst, countEarly, isDaySpecific } from "~/lib/schedule";
 import { useShowEarly } from "~/lib/use-show-early";
 import { EarlyToggle } from "~/components/EarlyToggle";
 import type { DayBoard } from "~/lib/types";
@@ -46,17 +46,21 @@ function WeekPage() {
   const [lanes, setLanes] = useState<Record<Lane, boolean>>({ food: true, fun: true, grocery: false });
   const [category, setCategory] = useState<string | null>(null);
 
-  // Weekday events that end by 5 PM are hidden unless asked for.
+  // Weekday specials and events that end by 5 PM are hidden unless asked
+  // for; when shown they sort to the bottom.
   const [showEarly, setShowEarly] = useShowEarly();
-  const afterWork = (d: DayBoard) =>
-    d.events.filter((e) => showEarly || !endsBeforeWorkEnd(e, d.date));
+  const dealsAfterWork = (d: DayBoard) => afterWorkFirst(d.restaurantDeals, d.date, showEarly);
+  const afterWork = (d: DayBoard) => afterWorkFirst(d.events, d.date, showEarly);
   const filteredEvents = (d: DayBoard) =>
     category ? afterWork(d).filter((e) => e.category === category) : afterWork(d);
+  const earlyHidden = showEarly
+    ? 0
+    : countEarly(day.restaurantDeals, day.date) + countEarly(day.events, day.date);
 
   const counts = useMemo(
     () =>
       Object.fromEntries(
-        board.days.map((d) => [d.date, { food: d.restaurantDeals.length, fun: afterWork(d).length }]),
+        board.days.map((d) => [d.date, { food: dealsAfterWork(d).length, fun: afterWork(d).length }]),
       ) as Record<IsoDate, { food: number; fun: number }>,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [board.days, showEarly],
@@ -142,11 +146,7 @@ function WeekPage() {
             </option>
           ))}
         </select>
-        <EarlyToggle
-          on={showEarly}
-          hidden={day.events.length - afterWork(day).length}
-          onChange={setShowEarly}
-        />
+        <EarlyToggle on={showEarly} hidden={earlyHidden} onChange={setShowEarly} />
       </div>
 
       {/* Selected day, in full. */}
@@ -156,11 +156,11 @@ function WeekPage() {
           {lanes.food ? (
             <div>
               <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
-                Restaurant specials · {day.restaurantDeals.length}
+                Restaurant specials · {dealsAfterWork(day).length}
               </h3>
-              <CollapsibleList items={day.restaurantDeals.length} className="flex flex-col gap-2">
-                {day.restaurantDeals.length ? (
-                  day.restaurantDeals.map((d) => <DealCard key={d.id} deal={d} />)
+              <CollapsibleList items={dealsAfterWork(day).length} className="flex flex-col gap-2">
+                {dealsAfterWork(day).length ? (
+                  dealsAfterWork(day).map((d) => <DealCard key={d.id} deal={d} />)
                 ) : (
                   <EmptyState>No specials listed.</EmptyState>
                 )}

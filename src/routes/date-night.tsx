@@ -11,7 +11,7 @@ import { Button } from "~/components/ui/button";
 import { ACTIVITY_CATEGORIES, isActivityCategory } from "~/lib/categories";
 import { formatLong, type IsoDate } from "~/lib/dates";
 import { buildPairings } from "~/lib/pairing";
-import { endsBeforeWorkEnd } from "~/lib/schedule";
+import { afterWorkFirst, countEarly } from "~/lib/schedule";
 import { useShowEarly } from "~/lib/use-show-early";
 import { EarlyToggle } from "~/components/EarlyToggle";
 import { weekBoardQueryOptions } from "~/server/board";
@@ -36,13 +36,20 @@ function DateNightPage() {
   const day = board.days.find((d) => d.date === selected) ?? board.days[0];
   const category = isActivityCategory(search.type) ? search.type : null;
 
-  // Weekday events that end by 5 PM are hidden unless asked for.
+  // Weekday specials and events that end by 5 PM are hidden unless asked
+  // for; when shown they sort to the bottom.
   const [showEarly, setShowEarly] = useShowEarly();
+  const dealsAfterWork = useMemo(
+    () => afterWorkFirst(day.restaurantDeals, day.date, showEarly),
+    [day.restaurantDeals, day.date, showEarly],
+  );
   const afterWork = useMemo(
-    () => day.events.filter((e) => showEarly || !endsBeforeWorkEnd(e, day.date)),
+    () => afterWorkFirst(day.events, day.date, showEarly),
     [day.events, day.date, showEarly],
   );
-  const earlyHidden = day.events.length - afterWork.length;
+  const earlyHidden = showEarly
+    ? 0
+    : countEarly(day.restaurantDeals, day.date) + countEarly(day.events, day.date);
 
   const counts = useMemo(
     () =>
@@ -50,8 +57,8 @@ function DateNightPage() {
         board.days.map((d) => [
           d.date,
           {
-            food: d.restaurantDeals.length,
-            fun: d.events.filter((e) => showEarly || !endsBeforeWorkEnd(e, d.date)).length,
+            food: afterWorkFirst(d.restaurantDeals, d.date, showEarly).length,
+            fun: afterWorkFirst(d.events, d.date, showEarly).length,
           },
         ]),
       ) as Record<IsoDate, { food: number; fun: number }>,
@@ -63,8 +70,8 @@ function DateNightPage() {
     [afterWork, category],
   );
   const pairings = useMemo(
-    () => buildPairings(day.restaurantDeals, events, { limit: 30, perVenue: 3 }),
-    [day.restaurantDeals, events],
+    () => buildPairings(dealsAfterWork, events, { limit: 30, perVenue: 3 }),
+    [dealsAfterWork, events],
   );
 
   const [surprise, setSurprise] = useState<number | null>(null);

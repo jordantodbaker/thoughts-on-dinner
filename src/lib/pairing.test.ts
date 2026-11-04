@@ -159,3 +159,20 @@ describe("endsBeforeWorkEnd", () => {
     expect(endsBeforeWorkEnd({ startTime: "11:00", endTime: "13:00" }, sat)).toBe(false);
   });
 });
+
+describe("afterWorkFirst", () => {
+  it("drops early weekday items by default and appends them at the bottom when shown", async () => {
+    const { afterWorkFirst, countEarly } = await import("./schedule");
+    const wed = "2026-11-04";
+    const early = deal({ title: "Afternoon HH", startTime: "14:00", endTime: "17:00" });
+    const evening = deal({ title: "Steak Night", startTime: "17:00", endTime: null });
+    const late = deal({ title: "Late Night", startTime: "21:00", endTime: "23:00" });
+    const list = [early, evening, late];
+    expect(afterWorkFirst(list, wed, false).map((d) => d.title)).toEqual(["Steak Night", "Late Night"]);
+    expect(afterWorkFirst(list, wed, true).map((d) => d.title)).toEqual(["Steak Night", "Late Night", "Afternoon HH"]);
+    expect(countEarly(list, wed)).toBe(1);
+    // Weekend: nothing is early, order untouched.
+    expect(afterWorkFirst(list, "2026-11-07", false)).toHaveLength(3);
+    expect(countEarly(list, "2026-11-07")).toBe(0);
+  });
+});

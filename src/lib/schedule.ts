@@ -99,3 +99,26 @@ export function endsBeforeWorkEnd(
   if (day === "SAT" || day === "SUN") return false;
   return end <= WORKDAY_END;
 }
+
+/**
+ * Apply the "before 5" preference to a day's list: items you can make after
+ * work first, and the early ones either dropped (default) or appended at the
+ * bottom when `showEarly` is on.
+ */
+export function afterWorkFirst<T extends { startTime: string | null; endTime: string | null }>(
+  items: readonly T[],
+  date: IsoDate,
+  showEarly: boolean,
+): T[] {
+  const reachable: T[] = [];
+  const early: T[] = [];
+  for (const item of items) (endsBeforeWorkEnd(item, date) ? early : reachable).push(item);
+  return showEarly ? [...reachable, ...early] : reachable;
+}
+
+export function countEarly<T extends { startTime: string | null; endTime: string | null }>(
+  items: readonly T[],
+  date: IsoDate,
+): number {
+  return items.filter((item) => endsBeforeWorkEnd(item, date)).length;
+}
