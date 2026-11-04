@@ -1,0 +1,38 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/client",
+  "rewrites": [
+    {
+      "source": "/((?!api/healthcheck).*)",
+      "destination": "/api/handler"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "api/handler.js": {
+      "includeFiles": "dist/server/**",
+      "memory": 1024,
+      "maxDuration": 300
+    },
+    "api/healthcheck.js": {
+      "memory": 256,
+      "maxDuration": 10
+    }
+  },
+  "crons": [
+    { "path": "/api/cron/scout/restaurants", "schedule": "0 13 * * 1" },
+    { "path": "/api/cron/scout/grocery", "schedule": "20 13 * * 1" },
+    { "path": "/api/cron/scout/activities", "schedule": "40 13 * * 1" }
+  ]
+}

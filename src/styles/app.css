@@ -1,0 +1,65 @@
+@import "tailwindcss" source("../");
+@import "tw-animate-css";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+:root {
+  /* Warm, evening palette: cream background, deep plum primary, terracotta accent. */
+  --background: oklch(0.985 0.008 80);
+  --foreground: oklch(0.2 0.02 40);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.02 40);
+  --primary: oklch(0.36 0.12 340);
+  --primary-foreground: oklch(0.98 0.005 80);
+  --muted: oklch(0.95 0.01 80);
+  --muted-foreground: oklch(0.5 0.02 50);
+  --accent: oklch(0.62 0.16 40);
+  --accent-foreground: oklch(0.99 0 0);
+  --border: oklch(0.9 0.012 70);
+  --ring: oklch(0.55 0.12 340);
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply font-sans antialiased;
+    color-scheme: light;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  a {
+    @apply underline-offset-2;
+  }
+}
+
+/* Thin horizontal scrollers (the day strip, the week grid on phones). */
+.scroll-x {
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}

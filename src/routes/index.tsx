@@ -1,0 +1,127 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Link, createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { DealCard, EmptyState, EventCard, SectionHeading } from "~/components/cards";
+import { PairingCard } from "~/components/PairingCard";
+import { Button } from "~/components/ui/button";
+import { formatLong, nowHHMM } from "~/lib/dates";
+import { buildPairings, pickPairing } from "~/lib/pairing";
+import { hasEnded, isDaySpecific } from "~/lib/schedule";
+import { weekBoardQueryOptions } from "~/server/board";
+
+export const Route = createFileRoute("/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(weekBoardQueryOptions()),
+  component: TonightPage,
+});
+
+function TonightPage() {
+  const { data: board } = useSuspenseQuery(weekBoardQueryOptions());
+  const today = board.days[0];
+
+  // "Still on tonight" filtering uses the browser clock, applied after mount
+  // so the server-rendered HTML and the first client render agree.
+  const [now, setNow] = useState<string | null>(null);
+  useEffect(() => {
+    setNow(nowHHMM());
+    const id = setInterval(() => setNow(nowHHMM()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const [showPast, setShowPast] = useState(false);
+
+  const liveDeals = useMemo(
+    () => today.restaurantDeals.filter((d) => showPast || !now || !hasEnded(d, now)),
+    [today.restaurantDeals, now, showPast],
+  );
+  const liveEvents = useMemo(
+    () => today.events.filter((e) => showPast || !now || !hasEnded(e, now)),
+    [today.events, now, showPast],
+  );
+  const hiddenCount =
+    today.restaurantDeals.length - liveDeals.length + (today.events.length - liveEvents.length);
+
+  const groceryToday = useMemo(() => today.groceryDeals.filter(isDaySpecific), [today.groceryDeals]);
+
+  const pairings = useMemo(() => buildPairings(liveDeals, liveEvents), [liveDeals, liveEvents]);
+  const [seed, setSeed] = useState(0);
+  const pairing = pickPairing(pairings, seed);
+
+  return (
+    <div className="flex flex-col gap-8">
+      <div>
+        <p className="text-sm text-muted-foreground">{formatLong(today.date)} · Bellingham, WA</p>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          What's good tonight?
+        </h1>
+      </div>
+
+      {pairing ? (
+        <PairingCard
+          pairing={pairing}
+          total={pairings.length}
+          onShuffle={() => setSeed((s) => s + 1)}
+        />
+      ) : (
+        <EmptyState>
+          No dinner-plus-activity pairing left for tonight.{" "}
+          <Link to="/date-night" className="underline">
+            Plan another night →
+          </Link>
+        </EmptyState>
+      )}
+
+      {hiddenCount > 0 || showPast ? (
+        <div className="-mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+          {showPast
+            ? "Showing everything today, including specials that already ended."
+            : `${hiddenCount} already wrapped up for today.`}
+          <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setShowPast((v) => !v)}>
+            {showPast ? "Hide ended" : "Show anyway"}
+          </Button>
+        </div>
+      ) : null}
+
+      <section>
+        <SectionHeading title="Restaurant specials" count={liveDeals.length} hint="Happy hours and day-of-week deals on today." />
+        {liveDeals.length ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {liveDeals.map((d) => (
+              <DealCard key={d.id} deal={d} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState>Nothing left today. Check the week view for tomorrow.</EmptyState>
+        )}
+      </section>
+
+      <section>
+        <SectionHeading title="Things to do" count={liveEvents.length} hint="Tonight's activities and events." />
+        {liveEvents.length ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {liveEvents.map((e) => (
+              <EventCard key={e.id} event={e} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState>No activities listed for tonight.</EmptyState>
+        )}
+      </section>
+
+      <section>
+        <SectionHeading title="Grocery today" count={groceryToday.length} hint="Day-of-week store deals and this week's ads. Standing loyalty programs are on the grocery page.">
+          <Link to="/grocery" className="text-sm text-primary hover:underline">
+            All stores →
+          </Link>
+        </SectionHeading>
+        {groceryToday.length ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {groceryToday.map((d) => (
+              <DealCard key={d.id} deal={d} compact />
+            ))}
+          </div>
+        ) : (
+          <EmptyState>No grocery deals specific to today.</EmptyState>
+        )}
+      </section>
+    </div>
+  );
+}

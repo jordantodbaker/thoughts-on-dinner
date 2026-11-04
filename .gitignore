@@ -1,0 +1,24 @@
+node_modules
+package-lock.json
+
+.DS_Store
+.cache
+.env
+.env.*
+!.env.example
+.vercel
+.output
+/dist/
+/build/
+
+# Generated Prisma client
+/src/generated/prisma
+
+# Vitest coverage output
+coverage/
+
+*.bak
+*.orig
+
+# PGlite dev database (DATABASE_URL=pglite://./.pglite)
+/.pglite/

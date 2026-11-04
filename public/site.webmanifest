@@ -1,0 +1,10 @@
+{
+  "name": "Thoughts on Dinner",
+  "short_name": "Dinner",
+  "description": "Bellingham food specials and date-night activities for the week.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f4ec",
+  "theme_color": "#5b2a4e",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

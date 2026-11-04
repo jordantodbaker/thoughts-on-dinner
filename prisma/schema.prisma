@@ -1,0 +1,176 @@
+// Thoughts on Dinner — Bellingham, WA food deals + date-night activities.
+//
+// Three kinds of venue (restaurant, grocery, activity) share one table so a
+// neighborhood lookup or an AI-scout upsert works the same way for all of
+// them. Deals hang off restaurants and grocery stores; Events hang off
+// activity venues (and the occasional brewery that hosts live music).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum VenueType {
+  RESTAURANT
+  GROCERY
+  ACTIVITY
+}
+
+enum ActivityCategory {
+  ICE_SKATING
+  PINBALL
+  ARCADE
+  BOWLING
+  DARTS
+  DANCING
+  LIVE_MUSIC
+  TRIVIA
+  KARAOKE
+  COMEDY
+  THEATER
+  MOVIES
+  GAMES
+  OUTDOORS
+  OTHER
+}
+
+enum Weekday {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
+/// Where a record came from. SEED rows are curated by hand in prisma/seed-data;
+/// AI rows are written by the weekly scout; MANUAL rows were added in the UI.
+enum RecordSource {
+  SEED
+  AI
+  MANUAL
+}
+
+enum Confidence {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model Venue {
+  id           Int               @id @default(autoincrement())
+  slug         String            @unique
+  name         String
+  type         VenueType
+  /// Only meaningful for ACTIVITY venues (and restaurants that host events).
+  category     ActivityCategory?
+  cuisine      String?
+  address      String?
+  neighborhood String?
+  website      String?
+  weeklyAdUrl  String?
+  description  String?
+  active       Boolean           @default(true)
+  source       RecordSource      @default(SEED)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  deals  Deal[]
+  events Event[]
+
+  @@index([type, active])
+  @@index([neighborhood])
+}
+
+/// A recurring (by weekday) or dated food special at a restaurant or grocer.
+model Deal {
+  id             Int          @id @default(autoincrement())
+  venueId        Int
+  venue          Venue        @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  /// Empty array = every day.
+  days           Weekday[]
+  /// "HH:MM" 24h local time, or null for all day / unknown.
+  startTime      String?
+  endTime        String?
+  priceText      String?
+  /// Date-only window the deal is valid for (weekly ads). Null = evergreen.
+  validFrom      DateTime?    @db.Date
+  validTo        DateTime?    @db.Date
+  sourceUrl      String?
+  confidence     Confidence   @default(MEDIUM)
+  source         RecordSource @default(SEED)
+  active         Boolean      @default(true)
+  lastVerifiedAt DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([venueId, title])
+  @@index([active])
+}
+
+/// A date-night activity: either recurring (days[]) or a one-off (date).
+model Event {
+  id             Int              @id @default(autoincrement())
+  venueId        Int
+  venue          Venue            @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  category       ActivityCategory
+  title          String
+  description    String?
+  recurring      Boolean          @default(true)
+  days           Weekday[]
+  date           DateTime?        @db.Date
+  startTime      String?
+  endTime        String?
+  priceText      String?
+  sourceUrl      String?
+  confidence     Confidence       @default(MEDIUM)
+  source         RecordSource     @default(SEED)
+  active         Boolean          @default(true)
+  lastVerifiedAt DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([venueId, title, date])
+  @@index([active, recurring])
+  @@index([date])
+}
+
+enum ScoutTarget {
+  RESTAURANTS
+  GROCERY
+  ACTIVITIES
+}
+
+enum ScoutStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+/// One run of the AI scout (per target). Kept so the admin page can show when
+/// data was last refreshed and what it cost.
+model ScoutRun {
+  id           Int         @id @default(autoincrement())
+  target       ScoutTarget
+  status       ScoutStatus @default(RUNNING)
+  startedAt    DateTime    @default(now())
+  finishedAt   DateTime?
+  model        String?
+  summary      String?
+  error        String?
+  venuesUpserted Int       @default(0)
+  dealsUpserted  Int       @default(0)
+  eventsUpserted Int       @default(0)
+  inputTokens  Int         @default(0)
+  outputTokens Int         @default(0)
+  searches     Int         @default(0)
+
+  @@index([target, startedAt])
+}
