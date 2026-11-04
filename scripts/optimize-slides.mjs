@@ -10,19 +10,29 @@
  * Originals are gitignored, copies and the JSON are committed, so a fresh
  * clone needs nothing from this script unless you add photos.
  */
-import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
 
 const SRC = "public/slides";
 const OUT = join(SRC, "web");
+const LIST = "src/lib/slides.json";
 const MAX_EDGE = 1400;
 
 mkdirSync(OUT, { recursive: true });
 
+// Order: whatever src/lib/slides.json already says (reorder entries by hand
+// to change the show), then any new photos alphabetically at the end.
+const previous = existsSync(LIST)
+  ? JSON.parse(readFileSync(LIST, "utf8")).map((s) => s.src.split("/").pop().replace(/\.jpg$/, ""))
+  : [];
+const rank = (f) => {
+  const i = previous.indexOf(f.replace(/\.[^.]+$/, ""));
+  return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+};
 const files = readdirSync(SRC)
   .filter((f) => /\.(jpe?g|png|heic|webp)$/i.test(f))
-  .sort();
+  .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 
 const slides = [];
 for (const file of files) {
@@ -36,5 +46,5 @@ for (const file of files) {
   console.log(`${file} → web/${name} ${info.width}x${info.height} ${Math.round(info.size / 1024)} KB`);
 }
 
-writeFileSync("src/lib/slides.json", JSON.stringify(slides, null, 2) + "\n");
-console.log(`wrote src/lib/slides.json (${slides.length} slides)`);
+writeFileSync(LIST, JSON.stringify(slides, null, 2) + "\n");
+console.log(`wrote ${LIST} (${slides.length} slides)`);

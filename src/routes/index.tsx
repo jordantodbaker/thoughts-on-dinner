@@ -1,17 +1,26 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import { DealCard, EmptyState, EventCard, SectionHeading } from "~/components/cards";
+import { CategoryChips } from "~/components/CategoryChips";
 import { PairingCard } from "~/components/PairingCard";
 import { Slideshow } from "~/components/Slideshow";
 import { CollapsibleList } from "~/components/CollapsibleList";
 import { Button } from "~/components/ui/button";
+import { ACTIVITY_CATEGORIES, isActivityCategory } from "~/lib/categories";
 import { formatLong, nowHHMM } from "~/lib/dates";
 import { buildPairings, pickPairing } from "~/lib/pairing";
 import { hasEnded, isDaySpecific } from "~/lib/schedule";
 import { weekBoardQueryOptions } from "~/server/board";
 
+const searchSchema = z.object({
+  /** Activity type filter for "Things to do" (and tonight's pairing). */
+  type: z.string().optional().catch(undefined),
+});
+
 export const Route = createFileRoute("/")({
+  validateSearch: searchSchema,
   loader: ({ context }) => context.queryClient.ensureQueryData(weekBoardQueryOptions()),
   component: TonightPage,
 });
@@ -19,6 +28,11 @@ export const Route = createFileRoute("/")({
 function TonightPage() {
   const { data: board } = useSuspenseQuery(weekBoardQueryOptions());
   const today = board.days[0];
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const category = isActivityCategory(search.type) ? search.type : null;
+  const setCategory = (type: string | null) =>
+    navigate({ search: { type: type ?? undefined }, replace: true });
 
   // "Still on tonight" filtering uses the browser clock, applied after mount
   // so the server-rendered HTML and the first client render agree.
@@ -35,11 +49,23 @@ function TonightPage() {
     [today.restaurantDeals, now, showPast],
   );
   const liveEvents = useMemo(
-    () => today.events.filter((e) => showPast || !now || !hasEnded(e, now)),
-    [today.events, now, showPast],
+    () =>
+      today.events.filter(
+        (e) => (showPast || !now || !hasEnded(e, now)) && (!category || e.category === category),
+      ),
+    [today.events, now, showPast, category],
   );
+  // Chips only for types that are on tonight (ignoring the active filter).
+  const availableCategories = useMemo(() => {
+    const present = new Set(
+      today.events.filter((e) => showPast || !now || !hasEnded(e, now)).map((e) => e.category),
+    );
+    return ACTIVITY_CATEGORIES.filter((c) => present.has(c));
+  }, [today.events, now, showPast]);
   const hiddenCount =
-    today.restaurantDeals.length - liveDeals.length + (today.events.length - liveEvents.length);
+    today.restaurantDeals.length -
+    liveDeals.length +
+    (today.events.filter((e) => !category || e.category === category).length - liveEvents.length);
 
   const groceryToday = useMemo(() => today.groceryDeals.filter(isDaySpecific), [today.groceryDeals]);
 
@@ -106,6 +132,12 @@ function TonightPage() {
 
       <section>
         <SectionHeading title="Things to do" count={liveEvents.length} hint="Tonight's activities and events." />
+        <CategoryChips
+          className="mb-3"
+          categories={availableCategories}
+          selected={category}
+          onSelect={setCategory}
+        />
         {liveEvents.length ? (
           <CollapsibleList items={liveEvents.length} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {liveEvents.map((e) => (
@@ -113,7 +145,18 @@ function TonightPage() {
             ))}
           </CollapsibleList>
         ) : (
-          <EmptyState>No activities listed for tonight.</EmptyState>
+          <EmptyState>
+            {category ? (
+              <>
+                Nothing of that type left tonight.{" "}
+                <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setCategory(null)}>
+                  Show everything
+                </Button>
+              </>
+            ) : (
+              "No activities listed for tonight."
+            )}
+          </EmptyState>
         )}
       </section>
 

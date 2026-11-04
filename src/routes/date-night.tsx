@@ -4,13 +4,13 @@ import { useMemo, useState } from "react";
 import { z } from "zod";
 import { DayStrip } from "~/components/DayStrip";
 import { EmptyState, SectionHeading } from "~/components/cards";
+import { CategoryChips } from "~/components/CategoryChips";
 import { PairingCard } from "~/components/PairingCard";
 import { CollapsibleList } from "~/components/CollapsibleList";
 import { Button } from "~/components/ui/button";
-import { ACTIVITY_CATEGORIES, CATEGORY_META } from "~/lib/categories";
+import { ACTIVITY_CATEGORIES, isActivityCategory } from "~/lib/categories";
 import { formatLong, type IsoDate } from "~/lib/dates";
 import { buildPairings } from "~/lib/pairing";
-import { cn } from "~/lib/utils";
 import { weekBoardQueryOptions } from "~/server/board";
 
 const searchSchema = z.object({
@@ -31,7 +31,7 @@ function DateNightPage() {
   const dates = board.days.map((d) => d.date);
   const selected: IsoDate = search.day && dates.includes(search.day) ? search.day : dates[0];
   const day = board.days.find((d) => d.date === selected) ?? board.days[0];
-  const category = search.type && (ACTIVITY_CATEGORIES as readonly string[]).includes(search.type) ? search.type : null;
+  const category = isActivityCategory(search.type) ? search.type : null;
 
   const counts = useMemo(
     () =>
@@ -73,40 +73,21 @@ function DateNightPage() {
         }}
       />
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        <button
-          type="button"
-          onClick={() => navigate({ search: { day: search.day, type: undefined }, replace: true })}
-          className={cn(
-            "rounded-full border px-3 py-1 text-xs font-medium",
-            !category ? "border-primary bg-primary text-primary-foreground" : "bg-card text-muted-foreground",
-          )}
-        >
-          Anything
-        </button>
-        {availableCategories.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => navigate({ search: { day: search.day, type: c }, replace: true })}
-            className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium",
-              category === c ? "border-primary bg-primary text-primary-foreground" : "bg-card text-muted-foreground",
-            )}
-          >
-            {CATEGORY_META[c].emoji} {CATEGORY_META[c].label}
-          </button>
-        ))}
+      <CategoryChips
+        categories={availableCategories}
+        selected={category}
+        onSelect={(c) => navigate({ search: { day: search.day, type: c ?? undefined }, replace: true })}
+      >
         <Button
           variant="accent"
           size="sm"
-          className="ml-auto"
+          className="ml-auto shrink-0"
           disabled={pairings.length === 0}
           onClick={() => setSurprise((s) => (s === null ? 0 : s + 1))}
         >
           Surprise me
         </Button>
-      </div>
+      </CategoryChips>
 
       {featured ? <PairingCard pairing={featured} /> : null}
 
