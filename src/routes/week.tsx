@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { z } from "zod";
 import { DayStrip } from "~/components/DayStrip";
 import { DealCard, EmptyState, EventCard, SectionHeading } from "~/components/cards";
+import { CollapsibleList } from "~/components/CollapsibleList";
 import { Button } from "~/components/ui/button";
 import { ACTIVITY_CATEGORIES, CATEGORY_META } from "~/lib/categories";
 import { addDays, formatLong, formatMonthDay, isIsoDate, WEEKDAY_SHORT, weekdayOf, type IsoDate } from "~/lib/dates";
@@ -145,13 +146,13 @@ function WeekPage() {
               <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
                 Restaurant specials · {day.restaurantDeals.length}
               </h3>
-              <div className="flex flex-col gap-2">
+              <CollapsibleList items={day.restaurantDeals.length} className="flex flex-col gap-2">
                 {day.restaurantDeals.length ? (
                   day.restaurantDeals.map((d) => <DealCard key={d.id} deal={d} />)
                 ) : (
                   <EmptyState>No specials listed.</EmptyState>
                 )}
-              </div>
+              </CollapsibleList>
             </div>
           ) : null}
           {lanes.fun ? (
@@ -159,13 +160,13 @@ function WeekPage() {
               <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
                 Activities · {filteredEvents(day).length}
               </h3>
-              <div className="flex flex-col gap-2">
+              <CollapsibleList items={filteredEvents(day).length} className="flex flex-col gap-2">
                 {filteredEvents(day).length ? (
                   filteredEvents(day).map((e) => <EventCard key={e.id} event={e} />)
                 ) : (
                   <EmptyState>Nothing in this category.</EmptyState>
                 )}
-              </div>
+              </CollapsibleList>
             </div>
           ) : null}
           {lanes.grocery ? (
@@ -173,13 +174,13 @@ function WeekPage() {
               <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
                 Grocery · {day.groceryDeals.filter(isDaySpecific).length}
               </h3>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <CollapsibleList items={day.groceryDeals.filter(isDaySpecific).length} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {day.groceryDeals.filter(isDaySpecific).length ? (
                   day.groceryDeals.filter(isDaySpecific).map((d) => <DealCard key={d.id} deal={d} compact />)
                 ) : (
                   <EmptyState>No grocery deals specific to this day.</EmptyState>
                 )}
-              </div>
+              </CollapsibleList>
             </div>
           ) : null}
         </div>

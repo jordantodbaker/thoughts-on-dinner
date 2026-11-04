@@ -31,7 +31,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Thoughts on Dinner — Bellingham deals & date nights" },
       {
         name: "description",
@@ -71,15 +71,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="min-h-screen">
         <Nav />
-        <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-6 sm:px-6">{children}</main>
-        <footer className="mx-auto max-w-6xl px-4 pb-8 text-xs text-muted-foreground sm:px-6">
+        <main className="mx-auto w-full max-w-6xl px-4 pb-10 pt-4 sm:px-6 sm:pb-16 sm:pt-6">{children}</main>
+        {/* Extra bottom padding on phones clears the fixed tab bar. */}
+        <footer className="mx-auto max-w-6xl px-4 pb-24 text-xs text-muted-foreground sm:px-6 sm:pb-8">
           Deals and events change without notice — tap a source link and confirm before you head
           out. Centered on Bellingham, WA.
         </footer>
         {import.meta.env.DEV ? (
           <React.Suspense>
-            <ReactQueryDevtools buttonPosition="bottom-left" />
-            <TanStackRouterDevtools position="bottom-right" />
+            <ReactQueryDevtools buttonPosition="top-left" />
+            <TanStackRouterDevtools position="top-right" />
           </React.Suspense>
         ) : null}
         <Scripts />

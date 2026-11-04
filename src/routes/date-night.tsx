@@ -5,6 +5,7 @@ import { z } from "zod";
 import { DayStrip } from "~/components/DayStrip";
 import { EmptyState, SectionHeading } from "~/components/cards";
 import { PairingCard } from "~/components/PairingCard";
+import { CollapsibleList } from "~/components/CollapsibleList";
 import { Button } from "~/components/ui/button";
 import { ACTIVITY_CATEGORIES, CATEGORY_META } from "~/lib/categories";
 import { formatLong, type IsoDate } from "~/lib/dates";
@@ -116,11 +117,11 @@ function DateNightPage() {
           hint="Ranked by neighborhood match and timing. Same-venue combos are left out on purpose."
         />
         {pairings.length ? (
-          <div className="flex flex-col gap-3">
+          <CollapsibleList items={pairings.length} className="flex flex-col gap-3">
             {pairings.map((p) => (
               <PairingCard key={`${p.deal.id}-${p.event.id}`} pairing={p} />
             ))}
-          </div>
+          </CollapsibleList>
         ) : (
           <EmptyState>
             {day.restaurantDeals.length === 0

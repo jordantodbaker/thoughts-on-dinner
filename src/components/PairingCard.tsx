@@ -18,8 +18,8 @@ export function PairingCard({
   const { deal, event, reasons } = pairing;
   const meta = CATEGORY_META[event.category];
   return (
-    <section className="rounded-2xl border bg-gradient-to-br from-primary/8 via-card to-accent/10 p-4 shadow-sm sm:p-6">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <section className="rounded-2xl border bg-gradient-to-br from-primary/8 via-card to-accent/10 p-3 shadow-sm sm:p-6">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 sm:mb-3">
         <div className="flex flex-wrap items-center gap-1.5">
           {reasons.map((r) => (
             <Badge key={r} tone="primary">
@@ -34,7 +34,7 @@ export function PairingCard({
           </Button>
         ) : null}
       </div>
-      <div className="grid items-stretch gap-3 sm:grid-cols-[1fr_auto_1fr]">
+      <div className="grid items-stretch gap-2 sm:grid-cols-[1fr_auto_1fr] sm:gap-3">
         <Step
           kicker="Dinner"
           title={deal.title}
@@ -79,7 +79,7 @@ function Step({
   href: string | null;
 }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl bg-card/80 p-4">
+    <div className="flex flex-col gap-1 rounded-xl bg-card/80 p-3 sm:p-4">
       <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {kicker}
       </div>

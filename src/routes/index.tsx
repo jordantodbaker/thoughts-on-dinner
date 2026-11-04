@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { DealCard, EmptyState, EventCard, SectionHeading } from "~/components/cards";
 import { PairingCard } from "~/components/PairingCard";
 import { Slideshow } from "~/components/Slideshow";
+import { CollapsibleList } from "~/components/CollapsibleList";
 import { Button } from "~/components/ui/button";
 import { formatLong, nowHHMM } from "~/lib/dates";
 import { buildPairings, pickPairing } from "~/lib/pairing";
@@ -93,11 +94,11 @@ function TonightPage() {
       <section>
         <SectionHeading title="Restaurant specials" count={liveDeals.length} hint="Happy hours and day-of-week deals on today." />
         {liveDeals.length ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <CollapsibleList items={liveDeals.length} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {liveDeals.map((d) => (
               <DealCard key={d.id} deal={d} />
             ))}
-          </div>
+          </CollapsibleList>
         ) : (
           <EmptyState>Nothing left today. Check the week view for tomorrow.</EmptyState>
         )}
@@ -106,11 +107,11 @@ function TonightPage() {
       <section>
         <SectionHeading title="Things to do" count={liveEvents.length} hint="Tonight's activities and events." />
         {liveEvents.length ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <CollapsibleList items={liveEvents.length} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {liveEvents.map((e) => (
               <EventCard key={e.id} event={e} />
             ))}
-          </div>
+          </CollapsibleList>
         ) : (
           <EmptyState>No activities listed for tonight.</EmptyState>
         )}
@@ -123,11 +124,11 @@ function TonightPage() {
           </Link>
         </SectionHeading>
         {groceryToday.length ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <CollapsibleList items={groceryToday.length} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {groceryToday.map((d) => (
               <DealCard key={d.id} deal={d} compact />
             ))}
-          </div>
+          </CollapsibleList>
         ) : (
           <EmptyState>No grocery deals specific to today.</EmptyState>
         )}
