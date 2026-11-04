@@ -4,10 +4,13 @@ import { useState } from "react";
 import { EmptyState, SectionHeading } from "~/components/cards";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { requireSignedIn } from "~/server/auth";
 import { statusQueryOptions } from "~/server/board";
 import { runScoutFn, type RunScoutResponse } from "~/server/scout-fns";
 
 export const Route = createFileRoute("/admin")({
+  // Signed-in users only; anonymous visitors are sent to /sign-in and back.
+  beforeLoad: () => requireSignedIn({ data: { redirectTo: "/admin" } }),
   loader: ({ context }) => context.queryClient.ensureQueryData(statusQueryOptions()),
   component: AdminPage,
 });

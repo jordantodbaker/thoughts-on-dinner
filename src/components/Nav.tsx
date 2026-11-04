@@ -1,5 +1,6 @@
+import { Show, SignInButton, UserButton } from "@clerk/tanstack-react-start";
 import { Link } from "@tanstack/react-router";
-import { CalendarDays, Heart, ShoppingBasket, Sparkles, UtensilsCrossed } from "lucide-react";
+import { CalendarDays, Heart, LogIn, ShoppingBasket, Sparkles, UtensilsCrossed } from "lucide-react";
 
 const links = [
   { to: "/", label: "Tonight", icon: UtensilsCrossed, exact: true },
@@ -34,6 +35,25 @@ export function Nav() {
               </Link>
             ))}
           </nav>
+          {/* Auth controls: sign in when signed out, the user menu when signed in.
+              On phones the nav links are in the bottom bar, so this sits alone
+              at the top right. */}
+          <div className="ml-auto flex items-center gap-2 sm:ml-2">
+            <Show when="signed-out">
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border bg-card px-2.5 text-sm font-medium hover:bg-muted"
+                >
+                  <LogIn className="size-4" />
+                  Sign in
+                </button>
+              </SignInButton>
+            </Show>
+            <Show when="signed-in">
+              <UserButton />
+            </Show>
+          </div>
         </div>
       </header>
 

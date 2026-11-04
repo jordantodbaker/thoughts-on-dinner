@@ -72,6 +72,18 @@ Other scripts: `pnpm test` (unit tests for dates, schedule, pairing),
 `pnpm build` (Vite client + SSR bundles, then `tsc --noEmit`),
 `pnpm exec tsx scripts/verify-local.ts` (end-to-end check with no database).
 
+## Authentication
+
+[Clerk](https://clerk.com) via `@clerk/tanstack-react-start`, linked to the
+"Thoughts For Dinner" application. The public pages (Tonight, This week, Date
+night, Grocery) need no account. `/admin` requires a signed-in user: its
+`beforeLoad` calls [`requireSignedIn`](src/server/auth.ts), which redirects to
+`/sign-in` and back. The nav shows a Sign in button (modal) when signed out and
+Clerk's user menu when signed in. `src/start.ts` registers CSRF protection and
+`clerkMiddleware()`; `/sign-in/$` and `/sign-up/$` are Clerk's prebuilt pages.
+Running the scout still needs `CRON_SECRET` even when signed in, so a random
+sign-up can't trigger paid refreshes.
+
 ## The AI scout
 
 `src/server/scout.ts` refreshes one target at a time — `RESTAURANTS`,
@@ -108,7 +120,10 @@ is disabled and the app runs on seed data.
    (`dist/client`), the catch-all rewrite to `api/handler.js`, function
    limits (1024 MB, 300 s — the scout needs the long timeout) and the crons.
 3. Environment variables: `DATABASE_URL`, `ANTHROPIC_API_KEY` (optional),
-   `CRON_SECRET` (needed for cron and the admin buttons in production).
+   `CRON_SECRET` (needed for cron and the admin buttons in production), and
+   the Clerk keys (`VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, plus the
+   four `VITE_CLERK_*_URL` values from `.env.example`). Use production Clerk
+   keys from `pnpm dlx clerk@latest deploy`, not the development ones.
 4. Apply the schema and seed once from your machine:
    `DATABASE_URL=... pnpm db:deploy && DATABASE_URL=... pnpm db:seed`.
 5. Deploy. `/api/healthcheck` pings the database without loading the app bundle.

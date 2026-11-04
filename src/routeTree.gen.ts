@@ -14,6 +14,8 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as DateNightRouteImport } from './routes/date-night'
 import { Route as GroceryRouteImport } from './routes/grocery'
 import { Route as WeekRouteImport } from './routes/week'
+import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
+import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
 import { Route as ApiCronScoutTargetRouteImport } from './routes/api.cron.scout.$target'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +43,16 @@ const WeekRoute = WeekRouteImport.update({
   path: '/week',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignInSplatRoute = SignInSplatRouteImport.update({
+  id: '/sign-in/$',
+  path: '/sign-in/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpSplatRoute = SignUpSplatRouteImport.update({
+  id: '/sign-up/$',
+  path: '/sign-up/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronScoutTargetRoute = ApiCronScoutTargetRouteImport.update({
   id: '/api/cron/scout/$target',
   path: '/api/cron/scout/$target',
@@ -53,6 +65,8 @@ export interface FileRoutesByFullPath {
   '/date-night': typeof DateNightRoute
   '/grocery': typeof GroceryRoute
   '/week': typeof WeekRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/sign-up/$': typeof SignUpSplatRoute
   '/api/cron/scout/$target': typeof ApiCronScoutTargetRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +75,8 @@ export interface FileRoutesByTo {
   '/date-night': typeof DateNightRoute
   '/grocery': typeof GroceryRoute
   '/week': typeof WeekRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/sign-up/$': typeof SignUpSplatRoute
   '/api/cron/scout/$target': typeof ApiCronScoutTargetRoute
 }
 export interface FileRoutesById {
@@ -70,6 +86,8 @@ export interface FileRoutesById {
   '/date-night': typeof DateNightRoute
   '/grocery': typeof GroceryRoute
   '/week': typeof WeekRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/sign-up/$': typeof SignUpSplatRoute
   '/api/cron/scout/$target': typeof ApiCronScoutTargetRoute
 }
 export interface FileRouteTypes {
@@ -80,6 +98,8 @@ export interface FileRouteTypes {
     | '/date-night'
     | '/grocery'
     | '/week'
+    | '/sign-in/$'
+    | '/sign-up/$'
     | '/api/cron/scout/$target'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -88,6 +108,8 @@ export interface FileRouteTypes {
     | '/date-night'
     | '/grocery'
     | '/week'
+    | '/sign-in/$'
+    | '/sign-up/$'
     | '/api/cron/scout/$target'
   id:
     | '__root__'
@@ -96,6 +118,8 @@ export interface FileRouteTypes {
     | '/date-night'
     | '/grocery'
     | '/week'
+    | '/sign-in/$'
+    | '/sign-up/$'
     | '/api/cron/scout/$target'
   fileRoutesById: FileRoutesById
 }
@@ -105,6 +129,8 @@ export interface RootRouteChildren {
   DateNightRoute: typeof DateNightRoute
   GroceryRoute: typeof GroceryRoute
   WeekRoute: typeof WeekRoute
+  SignInSplatRoute: typeof SignInSplatRoute
+  SignUpSplatRoute: typeof SignUpSplatRoute
   ApiCronScoutTargetRoute: typeof ApiCronScoutTargetRoute
 }
 
@@ -145,6 +171,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WeekRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sign-in/$': {
+      id: '/sign-in/$'
+      path: '/sign-in/$'
+      fullPath: '/sign-in/$'
+      preLoaderRoute: typeof SignInSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up/$': {
+      id: '/sign-up/$'
+      path: '/sign-up/$'
+      fullPath: '/sign-up/$'
+      preLoaderRoute: typeof SignUpSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/scout/$target': {
       id: '/api/cron/scout/$target'
       path: '/api/cron/scout/$target'
@@ -161,6 +201,8 @@ const rootRouteChildren: RootRouteChildren = {
   DateNightRoute: DateNightRoute,
   GroceryRoute: GroceryRoute,
   WeekRoute: WeekRoute,
+  SignInSplatRoute: SignInSplatRoute,
+  SignUpSplatRoute: SignUpSplatRoute,
   ApiCronScoutTargetRoute: ApiCronScoutTargetRoute,
 }
 export const routeTree = rootRouteImport
@@ -168,10 +210,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

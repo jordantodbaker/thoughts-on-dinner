@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import { ClerkProvider } from "@clerk/tanstack-react-start";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   HeadContent,
@@ -70,20 +71,27 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="min-h-screen">
-        <Nav />
-        <main className="mx-auto w-full max-w-6xl px-4 pb-10 pt-4 sm:px-6 sm:pb-16 sm:pt-6">{children}</main>
-        {/* Extra bottom padding on phones clears the fixed tab bar. */}
-        <footer className="mx-auto max-w-6xl px-4 pb-24 text-xs text-muted-foreground sm:px-6 sm:pb-8">
-          Deals and events change without notice — tap a source link and confirm before you head
-          out. Centered on Bellingham, WA.
-        </footer>
-        {import.meta.env.DEV ? (
-          <React.Suspense>
-            <ReactQueryDevtools buttonPosition="top-left" />
-            <TanStackRouterDevtools position="top-right" />
-          </React.Suspense>
-        ) : null}
-        <Scripts />
+        {/* Clerk: the public pages render for everyone; only /admin requires a
+            session. The provider sits inside <body> so the sign-in widgets and
+            the user button in the nav share one client. */}
+        <ClerkProvider>
+          <Nav />
+          <main className="mx-auto w-full max-w-6xl px-4 pb-10 pt-4 sm:px-6 sm:pb-16 sm:pt-6">
+            {children}
+          </main>
+          {/* Extra bottom padding on phones clears the fixed tab bar. */}
+          <footer className="mx-auto max-w-6xl px-4 pb-24 text-xs text-muted-foreground sm:px-6 sm:pb-8">
+            Deals and events change without notice — tap a source link and confirm before you head
+            out. Centered on Bellingham, WA.
+          </footer>
+          {import.meta.env.DEV ? (
+            <React.Suspense>
+              <ReactQueryDevtools buttonPosition="bottom-left" />
+              <TanStackRouterDevtools position="bottom-right" />
+            </React.Suspense>
+          ) : null}
+          <Scripts />
+        </ClerkProvider>
       </body>
     </html>
   );
